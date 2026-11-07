@@ -1,0 +1,152 @@
+# ============================================================
+# NetZeroX Policy Pulse Engine — Configuration
+# ============================================================
+# Sources, keywords, and delivery settings for the scraper.
+# Edit this file to add/remove regulatory sources.
+
+project:
+  name: "NetZeroX Policy Pulse"
+  version: "0.1.0"
+  tagline: "Cross-Border Compliance Insurance for Energy Leaders"
+
+# ── Data Sources ────────────────────────────────────────────
+# Each source has: name, country, type (rss|html), url, and tags.
+sources:
+  # 🇺🇸 United States
+  - name: "EPA - Environmental Protection Agency"
+    id: "epa"
+    country: "US"
+    type: "rss"
+    url: "https://www.federalregister.gov/api/v1/documents.rss?conditions%5Bagencies%5D%5B%5D=environmental-protection-agency&conditions%5Btype%5D%5B%5D=RULE&conditions%5Btype%5D%5B%5D=PRORULE"
+    tags: ["epa", "methane", "ghgrp", "clean-air"]
+
+  - name: "SEC - Climate Disclosure & Final Rules"
+    id: "sec"
+    country: "US"
+    type: "rss"
+    url: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&type=34-&dateb=&owner=include&count=20&search_text=&action=getcompany&output=atom"
+    tags: ["sec", "climate-disclosure", "scope-3"]
+
+  - name: "DOE - Clean Energy Funding"
+    id: "doe"
+    country: "US"
+    type: "rss"
+    url: "https://www.energy.gov/rss/articles.xml"
+    tags: ["doe", "hydrogen", "ccus", "ira"]
+
+  - name: "FERC - News & Updates"
+    id: "ferc"
+    country: "US"
+    type: "rss"
+    url: "https://www.ferc.gov/news-events/news/rss"
+    tags: ["ferc", "lng", "pipeline", "permits"]
+
+  # 🇨🇦 Canada
+  - name: "Canada Gazette Part I"
+    id: "canada-gazette"
+    country: "CA"
+    type: "rss"
+    url: "https://www.gazette.gc.ca/rss/part1-eng.xml"
+    tags: ["eccc", "emissions-cap", "cfr", "carbon-pricing"]
+
+  - name: "Alberta Energy Regulator"
+    id: "aer"
+    country: "CA"
+    type: "html"
+    url: "https://www.aer.ca/regulating-development/rules-and-directives/bulletins"
+    selector: "article.bulletin, .view-content .views-row"
+    tags: ["aer", "directive-060", "methane", "flaring"]
+
+  # 🏛️ State / Provincial
+  - name: "Texas Railroad Commission"
+    id: "tx-rrc"
+    country: "US"
+    type: "html"
+    url: "https://www.rrc.texas.gov/oil-and-gas/compliance-enforcement/enforcement-actions/"
+    selector: ".field-content, .views-row"
+    tags: ["texas", "permian", "flaring", "rule-32"]
+
+  - name: "BC Energy Regulator"
+    id: "bc-er"
+    country: "CA"
+    type: "html"
+    url: "https://www.bc-er.ca/news-and-publications/"
+    selector: ".news-item, article"
+    tags: ["bc", "montney", "fugitive-emissions"]
+
+# ── Keyword Filters ─────────────────────────────────────────
+# Items matching ANY of these keywords get flagged as HIGH priority.
+keywords:
+  critical:
+    - "methane"
+    - "CH4"
+    - "super-emitter"
+    - "Subpart W"
+    - "Scope 3"
+    - "endangerment finding"
+    - "emissions cap"
+  high:
+    - "Inflation Reduction Act"
+    - "45V"
+    - "45Q"
+    - "hydrogen"
+    - "CCUS"
+    - "carbon capture"
+    - "Directive 060"
+    - "flaring"
+    - "venting"
+  medium:
+    - "clean fuel"
+    - "carbon pricing"
+    - "TIER"
+    - "GHGRP"
+    - "LNG"
+    - "pipeline"
+
+# ── AI Analysis ─────────────────────────────────────────────
+analyzer:
+  model: "gpt-4o-mini"
+  temperature: 0.3
+  system_prompt: |
+    You are a regulatory intelligence analyst for North American energy companies.
+    Given a regulatory update, provide:
+    1. A 2-sentence executive summary
+    2. Impact level: CRITICAL, HIGH, MEDIUM, or LOW
+    3. A specific, actionable next step for a Sustainability Director
+
+    Respond ONLY in this JSON format:
+    {
+      "summary": "...",
+      "impact_level": "CRITICAL|HIGH|MEDIUM|LOW",
+      "action_required": "..."
+    }
+
+# ── Report Settings ──────────────────────────────────────────
+report:
+  title: "NetZeroX Policy Pulse: Energy Sector"
+  max_items: 5
+  output_dir: "output/"
+  format: "markdown"
+
+# ── Email Delivery ──────────────────────────────────────────
+email:
+  enabled: false
+  smtp_host: "smtp.gmail.com"
+  smtp_port: 587
+  from_address: ""
+  # Set via environment variables:
+  # POLICY_PULSE_EMAIL_USER
+  # POLICY_PULSE_EMAIL_PASS
+  subscribers: []
+
+# ── Compliance Calendar ──────────────────────────────────────
+calendar:
+  - date: "2026-03-31"
+    event: "US EPA GHGRP Reporting Deadline (e-GGRT)"
+    impact: "CRITICAL"
+  - date: "2026-03-31"
+    event: "Alberta TIER Compliance Report Due"
+    impact: "CRITICAL"
+  - date: "2026-06-01"
+    event: "Canada NPRI Reporting Deadline"
+    impact: "HIGH"

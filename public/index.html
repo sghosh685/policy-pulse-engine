@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NetZeroX Policy Pulse — Regulatory Intelligence Engine</title>
+  <meta name="description" content="Cross-Border Compliance Insurance for North American Energy Leaders. Automated intelligence engine tracking US & Canadian energy regulations.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0B0F17;
+      --card-bg: #111827;
+      --card-border: #1F2937;
+      --card-hover: #1E293B;
+      --text: #F3F4F6;
+      --text-muted: #9CA3AF;
+      --primary: #10B981;
+      --primary-glow: rgba(16, 185, 129, 0.2);
+      --danger: #EF4444;
+      --danger-bg: rgba(239, 68, 68, 0.15);
+      --warning: #F59E0B;
+      --warning-bg: rgba(245, 158, 11, 0.15);
+      --accent: #06B6D4;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Ambient background lights */
+    .glow-orb {
+      position: fixed;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+      top: -150px;
+      left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Navbar */
+    header {
+      padding: 24px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(11, 15, 23, 0.85);
+    }
+    .nav-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: white;
+    }
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #10B981, #06B6D4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+    }
+    .brand-title {
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+    }
+    .brand-title span { color: var(--primary); }
+
+    .pulse-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #34D399;
+    }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10B981;
+      box-shadow: 0 0 10px #10B981;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* Hero section */
+    .hero {
+      padding: 64px 0 40px;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: clamp(2.2rem, 5vw, 3.4rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 16px;
+    }
+    .hero h1 .gradient {
+      background: linear-gradient(135deg, #34D399, #38BDF8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      max-width: 680px;
+      margin: 0 auto 32px;
+    }
+
+    /* Stats bar */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .stat-card:hover {
+      border-color: rgba(16, 185, 129, 0.4);
+      transform: translateY(-2px);
+    }
+    .stat-val {
+      font-size: 2rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      color: white;
+    }
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* Filter / search section */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+    .filter-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: white;
+      border-color: #374151;
+    }
+    .tab-btn.active {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: var(--primary);
+      color: #34D399;
+    }
+
+    .search-box {
+      position: relative;
+      min-width: 280px;
+    }
+    .search-input {
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 10px 16px;
+      border-radius: 10px;
+      color: white;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-input:focus {
+      border-color: var(--primary);
+    }
+
+    /* Regulatory cards */
+    .updates-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 64px;
+    }
+    .update-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .update-card:hover {
+      border-color: #374151;
+      background: var(--card-hover);
+    }
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .card-badges {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .badge-critical {
+      background: var(--danger-bg);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .badge-high {
+      background: var(--warning-bg);
+      color: var(--warning);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .badge-source {
+      background: #1F2937;
+      color: #E5E7EB;
+      border: 1px solid #374151;
+    }
+    .card-date {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: white;
+      line-height: 1.4;
+    }
+    .card-summary {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 16px;
+    }
+    .action-box {
+      background: rgba(17, 24, 39, 0.9);
+      border-left: 3px solid var(--primary);
+      padding: 12px 16px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 16px;
+      font-size: 0.88rem;
+      color: #D1D5DB;
+    }
+    .action-box strong { color: white; }
+    .card-footer {
+      display: flex;
+      justify-content: flex-end;
+    }
+    .read-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #38BDF8;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.88rem;
+      transition: color 0.2s;
+    }
+    .read-link:hover { color: #7DD3FC; text-decoration: underline; }
+
+    /* Sources grid */
+    .sources-section {
+      background: #0D131F;
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 32px;
+      margin-bottom: 64px;
+    }
+    .section-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .section-subtitle {
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      font-size: 0.92rem;
+    }
+    .sources-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    .source-item {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 12px 16px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.88rem;
+    }
+    .source-item .country {
+      font-size: 1.1rem;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 36px 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+    }
+    footer a { color: var(--primary); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="glow-orb"></div>
+
+  <!-- Header -->
+  <header>
+    <div class="container nav-inner">
+      <a href="#" class="brand">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-title">NetZeroX <span>Policy Pulse</span></div>
+      </a>
+      <div class="pulse-badge">
+        <span class="pulse-dot"></span>
+        Engine Active &bull; Monitored 24/7
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container">
+    <!-- Hero -->
+    <section class="hero">
+      <h1>Cross-Border Energy Compliance <br><span class="gradient">Automated Intelligence</span></h1>
+      <p>AI-driven regulatory tracking scraping US & Canadian energy authorities. Filter updates, evaluate operational impact, and stay ahead of compliance deadlines.</p>
+    </section>
+
+    <!-- Stats -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-val" id="stat-total">5</div>
+        <div class="stat-label">Active Regulatory Alerts</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="color: #EF4444;" id="stat-critical">4</div>
+        <div class="stat-label">Critical Severity Items</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="color: #38BDF8;">8</div>
+        <div class="stat-label">Regulatory Bodies Scraped</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="color: #34D399;">100%</div>
+        <div class="stat-label">US & Canada Coverage</div>
+      </div>
+    </section>
+
+    <!-- Controls -->
+    <section class="controls">
+      <div class="filter-tabs">
+        <button class="tab-btn active" data-filter="all">All Alerts</button>
+        <button class="tab-btn" data-filter="critical">🚨 Critical Only</button>
+        <button class="tab-btn" data-filter="US">🇺🇸 United States</button>
+        <button class="tab-btn" data-filter="CA">🇨🇦 Canada</button>
+      </div>
+      <div class="search-box">
+        <input type="text" id="search-input" class="search-input" placeholder="Search keywords (e.g. methane, Scope 3, 45Q)...">
+      </div>
+    </section>
+
+    <!-- Updates List -->
+    <section class="updates-list" id="updates-container">
+      <!-- Injected by JavaScript -->
+    </section>
+
+    <!-- Monitored Sources Grid -->
+    <section class="sources-section">
+      <h2 class="section-title">📡 Monitored Regulatory Sources</h2>
+      <p class="section-subtitle">Automated scrapers crawl and vectorize updates across federal and provincial/state energy commissions.</p>
+      <div class="sources-grid">
+        <div class="source-item"><span>EPA (Federal Register)</span> <span class="country">🇺🇸</span></div>
+        <div class="source-item"><span>SEC Climate Disclosure</span> <span class="country">🇺🇸</span></div>
+        <div class="source-item"><span>DOE Clean Energy</span> <span class="country">🇺🇸</span></div>
+        <div class="source-item"><span>FERC Pipeline / LNG</span> <span class="country">🇺🇸</span></div>
+        <div class="source-item"><span>Canada Gazette Part I</span> <span class="country">🇨🇦</span></div>
+        <div class="source-item"><span>Alberta Energy Regulator</span> <span class="country">🇨🇦</span></div>
+        <div class="source-item"><span>Texas Railroad Commission</span> <span class="country">🇺🇸</span></div>
+        <div class="source-item"><span>BC Energy Regulator</span> <span class="country">🇨🇦</span></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>NetZeroX Policy Pulse Engine &bull; Built with Python, SQLite, Jinja2, OpenAI & Vercel</p>
+      <p style="margin-top: 6px; font-size: 0.8rem; color: #6B7280;">Designed & Engineered by <a href="https://github.com/sghosh685" target="_blank">Saikat Ghosh</a></p>
+    </div>
+  </footer>
+
+  <script>
+    const UPDATES_DATA = [
+      {
+        id: 1,
+        source: "EPA",
+        country: "US",
+        title: "EPA Finalizes Methane Emissions Standards for Oil and Gas Operations",
+        impact: "CRITICAL",
+        date: "2026-02-10",
+        summary: "Comprehensive federal rule targeting methane emissions under Subpart W with updated leak detection requirements and pneumatic equipment mandates.",
+        action: "Review this update and assess applicability to cross-border pipeline and compressor station operations.",
+        url: "https://www.federalregister.gov/d/2026-00001",
+        keywords: ["methane", "Subpart W", "EPA"]
+      },
+      {
+        id: 2,
+        source: "SEC",
+        country: "US",
+        title: "SEC Announces Stay on Scope 3 Reporting Requirements Pending Court Review",
+        impact: "CRITICAL",
+        date: "2026-02-12",
+        summary: "The Securities and Exchange Commission has issued an administrative stay on mandatory Scope 3 indirect emissions disclosure rules pending legal challenge determinations.",
+        action: "Brief executive committee on updated reporting schedule and preserve internal audit controls.",
+        url: "https://www.sec.gov/rules/2026-scope3-stay",
+        keywords: ["Scope 3", "disclosure", "SEC"]
+      },
+      {
+        id: 3,
+        source: "Canada Gazette Part I",
+        country: "CA",
+        title: "ECCC: Draft Regulations on Oil and Gas Sector Emissions Cap Published",
+        impact: "CRITICAL",
+        date: "2026-02-11",
+        summary: "Environment and Climate Change Canada (ECCC) released proposed regulatory framework imposing declining greenhouse gas emissions caps on upstream petroleum production.",
+        action: "Model capital expenditure impacts against compliance allowance allocations prior to public comment cutoff.",
+        url: "https://www.gazette.gc.ca/rp-pr/p1/2026/emissions-cap",
+        keywords: ["Emissions Cap", "ECCC", "Canada Gazette"]
+      },
+      {
+        id: 4,
+        source: "Alberta Energy Regulator",
+        country: "CA",
+        title: "AER Updates Directive 060: Enhanced Methane Monitoring Requirements",
+        impact: "CRITICAL",
+        date: "2026-02-09",
+        summary: "Provincial regulatory update mandating continuous fugitive emissions monitoring and shortened remediation timelines for upstream facilities.",
+        action: "Coordinate with field engineering teams to update leak detection and repair (LDAR) logs.",
+        url: "https://www.aer.ca/directives/directive-060-update-2026",
+        keywords: ["Directive 060", "Methane", "AER"]
+      },
+      {
+        id: 5,
+        source: "DOE",
+        country: "US",
+        title: "DOE Announces $2.1B in 45Q Carbon Capture Tax Credits for Industrial Facilities",
+        impact: "HIGH",
+        date: "2026-02-08",
+        summary: "Department of Energy Office of Clean Energy Demonstrations opens Round 2 funding tranches and qualified project verification for direct air capture and CCUS.",
+        action: "Evaluate point-source carbon capture readiness for eligible manufacturing assets.",
+        url: "https://www.energy.gov/oced/45q-round2",
+        keywords: ["45Q", "Tax Credits", "CCUS", "DOE"]
+      }
+    ];
+
+    let currentFilter = 'all';
+    let searchQuery = '';
+
+    function renderUpdates() {
+      const container = document.getElementById('updates-container');
+      const filtered = UPDATES_DATA.filter(item => {
+        // filter by tab
+        if (currentFilter === 'critical' && item.impact !== 'CRITICAL') return false;
+        if (currentFilter === 'US' && item.country !== 'US') return false;
+        if (currentFilter === 'CA' && item.country !== 'CA') return false;
+
+        // filter by search query
+        if (searchQuery) {
+          const q = searchQuery.toLowerCase();
+          const matchTitle = item.title.toLowerCase().includes(q);
+          const matchSource = item.source.toLowerCase().includes(q);
+          const matchSummary = item.summary.toLowerCase().includes(q);
+          const matchKeywords = item.keywords.some(k => k.toLowerCase().includes(q));
+          return matchTitle || matchSource || matchSummary || matchKeywords;
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 48px; background: #111827; border-radius: 16px; border: 1px solid #1F2937;">
+            <p style="color: #9CA3AF; font-size: 1.1rem;">No regulatory alerts match the selected criteria.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(item => {
+        const flag = item.country === 'US' ? '🇺🇸' : '🇨🇦';
+        const impactBadge = item.impact === 'CRITICAL'
+          ? '<span class="badge badge-critical">Critical Impact</span>'
+          : '<span class="badge badge-high">High Impact</span>';
+
+        return `
+          <article class="update-card">
+            <div class="card-top">
+              <div class="card-badges">
+                <span class="badge badge-source">${flag} ${item.source}</span>
+                ${impactBadge}
+              </div>
+              <div class="card-date">${item.date}</div>
+            </div>
+            <h3 class="card-title">${item.title}</h3>
+            <p class="card-summary">${item.summary}</p>
+            <div class="action-box">
+              <strong>Required Executive Action:</strong> ${item.action}
+            </div>
+            <div class="card-footer">
+              <a href="${item.url}" target="_blank" rel="noopener" class="read-link">
+                View Official Regulatory Document &rarr;
+              </a>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    // Tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        renderUpdates();
+      });
+    });
+
+    // Search input
+    document.getElementById('search-input').addEventListener('input', (e) => {
+      searchQuery = e.target.value.trim();
+      renderUpdates();
+    });
+
+    // Initial render
+    renderUpdates();
+  </script>
+</body>
+</html>
