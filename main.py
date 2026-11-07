@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
 """
 NetZeroX Policy Pulse — Main CLI Runner
-The single entry point for all Policy Pulse operations.
+The central orchestrator for cross-border regulatory intelligence.
 
 Usage:
-    python main.py scrape       # Scrape all sources
-    python main.py analyze      # AI-analyze new items
-    python main.py report       # Generate weekly report
-    python main.py pipeline     # Run full pipeline (scrape → analyze → report)
-    python main.py stats        # Show database stats
-    python main.py init         # Initialize database
+    python main.py init         # Initialize database and tables
+    python main.py scrape       # Scrape 8 US/Canada regulatory sources
+    python main.py analyze      # AI & expert regulatory analysis on new items
+    python main.py report       # Generate executive briefing
+    python main.py export       # Export database to public/data/updates.json
+    python main.py pipeline     # Full pipeline (scrape → analyze → report → export)
+    python main.py stats        # Display database statistics
 """
 
 import os
 import sys
 
-# Ensure we're running from the project root
+# Ensure execution from project root
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 os.chdir(PROJECT_DIR)
 sys.path.insert(0, PROJECT_DIR)
@@ -23,70 +24,67 @@ sys.path.insert(0, PROJECT_DIR)
 from src import database as db
 from src.scraper import run_scrape
 from src.analyzer import run_analysis
-from src.report_generator import generate_report
+from src.report_generator import generate_report, export_dashboard_json
 
 
 def cmd_init():
-    """Initialize the database."""
+    """Initialize database and schema."""
     db.init_db()
 
 
 def cmd_scrape():
-    """Run scrapers across all sources."""
+    """Scrape regulatory sources."""
     db.init_db()
-    result = run_scrape()
-    return result
+    run_scrape()
 
 
 def cmd_analyze():
-    """Run AI analysis on unanalyzed items."""
+    """Run regulatory analysis on unanalyzed items."""
+    db.init_db()
     run_analysis()
 
 
 def cmd_report():
-    """Generate the weekly report."""
-    path = generate_report()
-    return path
+    """Generate weekly executive briefing and sync dashboard data."""
+    db.init_db()
+    generate_report()
+
+
+def cmd_export():
+    """Export database directly to public/data/updates.json."""
+    db.init_db()
+    export_dashboard_json()
 
 
 def cmd_pipeline():
-    """Run the full pipeline: scrape → analyze → report."""
-    print("\n" + "🔄" * 30)
-    print("  POLICY PULSE — FULL PIPELINE")
-    print("🔄" * 30 + "\n")
-
-    # Step 1: Scrape
-    print("\n📡 STEP 1/3: SCRAPING SOURCES...")
-    scrape_result = cmd_scrape()
-
-    # Step 2: Analyze
-    print("\n🧠 STEP 2/3: AI ANALYSIS...")
-    cmd_analyze()
-
-    # Step 3: Report
-    print("\n📄 STEP 3/3: GENERATING REPORT...")
-    report_path = cmd_report()
-
-    print("\n" + "✅" * 30)
-    print("  PIPELINE COMPLETE")
-    print(f"  Report: {report_path}")
-    print("✅" * 30 + "\n")
-
-    return report_path
+    """Run end-to-end intelligence pipeline."""
+    print("🚀 Starting NetZeroX Policy Pulse Pipeline...")
+    print("=" * 60)
+    db.init_db()
+    scrape_res = run_scrape()
+    analyzed_count = run_analysis()
+    report_file = generate_report()
+    export_dashboard_json()
+    print("=" * 60)
+    print("🎉 Pipeline Completed Successfully!")
+    print(f"   • Scraped: {scrape_res['total_found']} found ({scrape_res['total_new']} new)")
+    print(f"   • Analyzed: {analyzed_count} items")
+    print(f"   • Executive Report: {report_file}")
+    print(f"   • Dashboard Data: public/data/updates.json")
 
 
 def cmd_stats():
     """Show database statistics."""
     db.init_db()
     stats = db.get_stats()
-    print("\n📊 Policy Pulse Database Stats")
-    print("=" * 40)
-    print(f"  Total Items:   {stats['total_items']}")
-    print(f"  Analyzed:      {stats['analyzed']}")
-    print(f"  Unanalyzed:    {stats['unanalyzed']}")
-    print(f"  By Country:    {stats['by_country']}")
-    print(f"  By Impact:     {stats['by_impact']}")
-    print("=" * 40)
+    print("\n📊 NetZeroX Policy Pulse — Database Metrics")
+    print("=" * 45)
+    print(f"  Total Items Tracked:  {stats['total_items']}")
+    print(f"  Analyzed:             {stats['analyzed']}")
+    print(f"  Unanalyzed:           {stats['unanalyzed']}")
+    print(f"  By Country:           {stats['by_country']}")
+    print(f"  By Impact Severity:   {stats['by_impact']}")
+    print("=" * 45)
 
 
 COMMANDS = {
@@ -94,6 +92,7 @@ COMMANDS = {
     "scrape": cmd_scrape,
     "analyze": cmd_analyze,
     "report": cmd_report,
+    "export": cmd_export,
     "pipeline": cmd_pipeline,
     "stats": cmd_stats,
 }
@@ -101,27 +100,26 @@ COMMANDS = {
 
 def main():
     if len(sys.argv) < 2 or sys.argv[1] not in COMMANDS:
-        print("NetZeroX Policy Pulse Engine v0.1.0")
-        print("=" * 40)
+        print("NetZeroX Policy Pulse Engine v1.0.0")
+        print("Cross-Border Compliance Insurance for Energy Leaders")
+        print("=" * 55)
         print("Usage: python main.py <command>")
         print()
         print("Commands:")
-        print("  init       Initialize the database")
-        print("  scrape     Scrape all regulatory sources")
-        print("  analyze    Run AI analysis on new items")
+        print("  init       Initialize database & apply migrations")
+        print("  scrape     Scrape 8 US/Canada regulatory sources")
+        print("  analyze    Run AI & domain intelligence analysis")
         print("  report     Generate weekly executive briefing")
-        print("  pipeline   Run full pipeline (scrape → analyze → report)")
-        print("  stats      Show database statistics")
+        print("  export     Export database to public/data/updates.json")
+        print("  pipeline   Run full pipeline (scrape → analyze → report → export)")
+        print("  stats      Display database statistics")
         sys.exit(1)
 
     command = sys.argv[1]
     COMMANDS[command]()
 
 
-if __name__ == "__main__":
-    main()
-
-
+# WSGI handler for Vercel
 def app(environ, start_response):
     """WSGI entry point for serverless hosting."""
     html_path = os.path.join(PROJECT_DIR, "public", "index.html")
@@ -134,3 +132,7 @@ def app(environ, start_response):
     return [content]
 
 handler = app
+
+
+if __name__ == "__main__":
+    main()

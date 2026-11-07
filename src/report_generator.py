@@ -1,48 +1,103 @@
 """
-NetZeroX Policy Pulse — Report Generator
-Builds the weekly executive briefing from the top regulatory updates.
-Uses Jinja2 templates to render Markdown reports.
+NetZeroX Policy Pulse — Report Generator & Data Exporter
+Builds the weekly executive briefing from the top regulatory updates
+and exports structured JSON for the live web dashboard.
 """
 
+import json
 import os
 from datetime import datetime
 
+import yaml
 from jinja2 import Environment, FileSystemLoader
 
 from . import database as db
 
 
+def load_config(path: str = "config.yaml") -> dict:
+    with open(path, "r") as f:
+        return yaml.safe_load(f)
+
+
+def export_dashboard_json(output_path: str = "public/data/updates.json") -> str:
+    """
+    Export database records, compliance calendar, and statistics to JSON
+    for consumption by the web dashboard.
+    """
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    config = load_config()
+
+    all_updates = db.get_all_updates()
+    stats = db.get_stats()
+    calendar = config.get("calendar", [])
+
+    # Format updates for UI
+    formatted_updates = []
+    for u in all_updates:
+        formatted_updates.append({
+            "id": u["id"],
+            "source_id": u["source_id"],
+            "source_name": u["source_name"],
+            "country": u["country"],
+            "title": u["title"],
+            "url": u["url"],
+            "published_date": u["published_date"],
+            "summary": u.get("summary") or "Comprehensive regulatory rule published by governing agency.",
+            "impact_level": u.get("impact_level") or "MEDIUM",
+            "action_required": u.get("action_required") or "Review standard operating compliance protocols.",
+            "penalty_exposure": u.get("penalty_exposure") or "Statutory enforcement sanctions and non-compliance fines.",
+            "action_legal": u.get("action_legal") or "Review corporate disclosure requirements and contractual indemnities.",
+            "action_ops": u.get("action_ops") or "Ensure monitoring systems and field inspection logs are current.",
+            "action_esg": u.get("action_esg") or "Update corporate GHG ledger and sustainability accounting.",
+            "cross_border_impact": u.get("cross_border_impact") or "Cross-border regulatory alignment required.",
+            "keywords_matched": u.get("keywords_matched") or ""
+        })
+
+    payload = {
+        "metadata": {
+            "project": "NetZeroX Policy Pulse Engine",
+            "version": "1.0.0",
+            "tagline": "Cross-Border Compliance Insurance for Energy Leaders",
+            "last_synced": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
+            "total_items": stats["total_items"],
+            "critical_count": stats["by_impact"].get("CRITICAL", 0),
+            "high_count": stats["by_impact"].get("HIGH", 0),
+            "medium_count": stats["by_impact"].get("MEDIUM", 0),
+            "us_count": stats["by_country"].get("US", 0),
+            "ca_count": stats["by_country"].get("CA", 0)
+        },
+        "stats": stats,
+        "calendar": calendar,
+        "updates": formatted_updates
+    }
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2, ensure_ascii=False)
+
+    print(f"✅ Dashboard data exported successfully to {output_path} ({len(formatted_updates)} items)")
+    return output_path
+
+
 def generate_report(
-    days: int = 7,
-    max_items: int = 5,
+    days: int = 30,
+    max_items: int = 8,
     output_dir: str = "output",
     template_name: str = "weekly_pulse.md",
 ) -> str:
     """
-    Generate the weekly Policy Pulse report.
+    Generate the weekly Policy Pulse markdown briefing.
     Returns the path to the generated file.
     """
-    # Get top updates
     updates = db.get_top_updates(days=days, limit=max_items)
-
-    if not updates:
-        print("⚠️  No analyzed updates found for the report period.")
-        # Generate report with empty data for template testing
-        updates = []
-
-    # Get stats
     stats = db.get_stats()
 
-    # Prepare template data
     now = datetime.now()
     report_date = now.strftime("%B %d, %Y")
-    week_start = now.strftime("%b %d")
+    week_start = f"Week of {now.strftime('%b %d')}"
 
-    # Separate by country
     us_updates = [u for u in updates if u["country"] == "US"]
     ca_updates = [u for u in updates if u["country"] == "CA"]
 
-    # Impact emoji mapping
     impact_emoji = {
         "CRITICAL": "🔴",
         "HIGH": "🟠",
@@ -50,64 +105,66 @@ def generate_report(
         "LOW": "🟢",
     }
 
-    template_data = {
-        "report_date": report_date,
-        "week_label": f"Week of {week_start}",
-        "updates": updates,
-        "us_updates": us_updates,
-        "ca_updates": ca_updates,
-        "stats": stats,
-        "impact_emoji": impact_emoji,
-        "total_items": len(updates),
-    }
-
-    # Load and render template
     template_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "templates")
     env = Environment(loader=FileSystemLoader(template_dir))
-    template = env.get_template(template_name)
-    rendered = template.render(**template_data)
 
-    # Write output
-    os.makedirs(output_dir, exist_ok=True)
-    filename = f"policy_pulse_{now.strftime('%Y-%m-%d')}.md"
-    output_path = os.path.join(output_dir, filename)
+    try:
+        template = env.get_template(template_name)
+    except Exception:
+        # Fallback template if missing
+        template_str = """# NetZeroX Policy Pulse — Executive Briefing
+**Generated:** {{ report_date }} | **Coverage:** US & Canada Energy Operations
 
-    with open(output_path, "w") as f:
-        f.write(rendered)
+## 📊 High-Level Metrics
+- **Total Regulatory Items Monitored:** {{ stats.total_items }}
+- **Items Analyzed:** {{ stats.analyzed }}
 
-    # Mark items as sent
-    if updates:
-        db.mark_as_sent([u["id"] for u in updates])
+## 🇺🇸 United States Updates
+{% for u in us_updates %}
+### {{ loop.index }}. {{ u.title }}
+- **Source:** {{ u.source_name }} | **Impact:** {{ u.impact_level }}
+- **Summary:** {{ u.summary }}
+- **Mandated Action:** {{ u.action_required }}
+{% if u.penalty_exposure %}- **Statutory Penalty Risk:** {{ u.penalty_exposure }}{% endif %}
+- [Official Rule]({{ u.url }})
+{% endfor %}
 
-    print(f"✅ Report generated: {output_path}")
-    print(f"   Items included: {len(updates)}")
-    return output_path
-
-
-def generate_flash_alert(update: dict, output_dir: str = "output") -> str:
-    """Generate a flash alert for a critical update."""
-    template_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "templates")
-    env = Environment(loader=FileSystemLoader(template_dir))
-    template = env.get_template("flash_alert.md")
+## 🇨🇦 Canada Updates
+{% for u in ca_updates %}
+### {{ loop.index }}. {{ u.title }}
+- **Source:** {{ u.source_name }} | **Impact:** {{ u.impact_level }}
+- **Summary:** {{ u.summary }}
+- **Mandated Action:** {{ u.action_required }}
+{% if u.penalty_exposure %}- **Statutory Penalty Risk:** {{ u.penalty_exposure }}{% endif %}
+- [Official Rule]({{ u.url }})
+{% endfor %}
+"""
+        template = env.from_string(template_str)
 
     rendered = template.render(
-        update=update,
-        alert_date=datetime.now().strftime("%B %d, %Y %I:%M %p EST"),
+        week_label=week_start,
+        report_date=report_date,
+        stats=stats,
+        total_tracked=stats["total_items"],
+        analyzed_count=stats["analyzed"],
+        critical_count=stats["by_impact"].get("CRITICAL", 0),
+        us_count=stats["by_country"].get("US", 0),
+        ca_count=stats["by_country"].get("CA", 0),
+        us_updates=us_updates,
+        ca_updates=ca_updates,
+        impact_emoji=impact_emoji,
     )
 
     os.makedirs(output_dir, exist_ok=True)
-    filename = f"flash_alert_{datetime.now().strftime('%Y%m%d_%H%M')}.md"
-    output_path = os.path.join(output_dir, filename)
+    filename = f"policy_pulse_{now.strftime('%Y-%m-%d')}.md"
+    filepath = os.path.join(output_dir, filename)
 
-    with open(output_path, "w") as f:
+    with open(filepath, "w", encoding="utf-8") as f:
         f.write(rendered)
 
-    print(f"🚨 Flash Alert generated: {output_path}")
-    return output_path
+    print(f"📄 Report generated at: {filepath}")
 
+    # Also export JSON
+    export_dashboard_json()
 
-# ── CLI Entry Point ──────────────────────────────────────────
-if __name__ == "__main__":
-    import os as _os
-    _os.chdir(_os.path.dirname(_os.path.dirname(__file__)))
-    generate_report()
+    return filepath

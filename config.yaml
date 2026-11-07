@@ -1,81 +1,79 @@
 # ============================================================
 # NetZeroX Policy Pulse Engine — Configuration
 # ============================================================
-# Sources, keywords, and delivery settings for the scraper.
-# Edit this file to add/remove regulatory sources.
+# Cross-Border Compliance Insurance for North American Energy Leaders
 
 project:
   name: "NetZeroX Policy Pulse"
-  version: "0.1.0"
+  version: "1.0.0"
   tagline: "Cross-Border Compliance Insurance for Energy Leaders"
 
 # ── Data Sources ────────────────────────────────────────────
-# Each source has: name, country, type (rss|html), url, and tags.
 sources:
-  # 🇺🇸 United States
+  # 🇺🇸 United States - Federal
   - name: "EPA - Environmental Protection Agency"
     id: "epa"
     country: "US"
     type: "rss"
-    url: "https://www.federalregister.gov/api/v1/documents.rss?conditions%5Bagencies%5D%5B%5D=environmental-protection-agency&conditions%5Btype%5D%5B%5D=RULE&conditions%5Btype%5D%5B%5D=PRORULE"
-    tags: ["epa", "methane", "ghgrp", "clean-air"]
+    url: "https://www.federalregister.gov/api/v1/documents.rss?conditions%5Bagencies%5D%5B%5D=environmental-protection-agency&conditions%5Btype%5D%5B%5D=RULE"
+    tags: ["epa", "methane", "subpart-w", "clean-air", "super-emitter"]
 
-  - name: "SEC - Climate Disclosure & Final Rules"
+  - name: "SEC - Climate & Market Regulations"
     id: "sec"
     country: "US"
     type: "rss"
-    url: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&type=34-&dateb=&owner=include&count=20&search_text=&action=getcompany&output=atom"
-    tags: ["sec", "climate-disclosure", "scope-3"]
+    url: "https://www.sec.gov/news/pressreleases.rss"
+    tags: ["sec", "climate-disclosure", "scope-3", "esg"]
 
-  - name: "DOE - Clean Energy Funding"
+  - name: "DOE - Clean Energy Funding & 45Q/45V"
     id: "doe"
     country: "US"
     type: "rss"
     url: "https://www.energy.gov/rss/articles.xml"
-    tags: ["doe", "hydrogen", "ccus", "ira"]
+    tags: ["doe", "hydrogen", "ccus", "ira", "45q", "45v"]
 
-  - name: "FERC - News & Updates"
+  - name: "FERC - Energy Regulatory Commission"
     id: "ferc"
     country: "US"
     type: "rss"
-    url: "https://www.ferc.gov/news-events/news/rss"
-    tags: ["ferc", "lng", "pipeline", "permits"]
+    url: "https://www.federalregister.gov/api/v1/documents.rss?conditions%5Bagencies%5D%5B%5D=federal-energy-regulatory-commission"
+    tags: ["ferc", "lng", "pipeline", "interconnection", "transmission"]
 
-  # 🇨🇦 Canada
-  - name: "Canada Gazette Part I"
+  # 🇨🇦 Canada - Federal
+  - name: "Canada Gazette Part I (Official Regulations)"
     id: "canada-gazette"
     country: "CA"
     type: "rss"
-    url: "https://www.gazette.gc.ca/rss/part1-eng.xml"
-    tags: ["eccc", "emissions-cap", "cfr", "carbon-pricing"]
+    url: "https://gazette.gc.ca/rss/p1-eng.xml"
+    tags: ["eccc", "emissions-cap", "cfr", "clean-electricity", "carbon-pricing"]
 
-  - name: "Alberta Energy Regulator"
+  # 🇨🇦 Canada - Provincial
+  - name: "Alberta Energy Regulator (AER Bulletins)"
     id: "aer"
     country: "CA"
     type: "html"
     url: "https://www.aer.ca/regulating-development/rules-and-directives/bulletins"
-    selector: "article.bulletin, .view-content .views-row"
-    tags: ["aer", "directive-060", "methane", "flaring"]
+    selector: "a"
+    tags: ["aer", "directive-060", "directive-017", "methane", "tier"]
 
-  # 🏛️ State / Provincial
-  - name: "Texas Railroad Commission"
-    id: "tx-rrc"
-    country: "US"
-    type: "html"
-    url: "https://www.rrc.texas.gov/oil-and-gas/compliance-enforcement/enforcement-actions/"
-    selector: ".field-content, .views-row"
-    tags: ["texas", "permian", "flaring", "rule-32"]
-
-  - name: "BC Energy Regulator"
+  - name: "BC Energy Regulator (BC-ER)"
     id: "bc-er"
     country: "CA"
     type: "html"
-    url: "https://www.bc-er.ca/news-and-publications/"
-    selector: ".news-item, article"
-    tags: ["bc", "montney", "fugitive-emissions"]
+    url: "https://www.bc-er.ca/news/"
+    selector: "article, .news-item, .post-item, a"
+    tags: ["bc", "montney", "fugitive-emissions", "cleanbc"]
 
-# ── Keyword Filters ─────────────────────────────────────────
-# Items matching ANY of these keywords get flagged as HIGH priority.
+  # 🇺🇸 United States - State
+  - name: "Texas Railroad Commission (TX RRC)"
+    id: "tx-rrc"
+    country: "US"
+    type: "html"
+    url: "https://www.rrc.texas.gov/announcements/"
+    selector: "a"
+    tags: ["texas", "permian", "flaring", "rule-32", "waste-prevention"]
+
+# ── Keyword Taxonomies ──────────────────────────────────────
 keywords:
   critical:
     - "methane"
@@ -85,6 +83,10 @@ keywords:
     - "Scope 3"
     - "endangerment finding"
     - "emissions cap"
+    - "Directive 060"
+    - "Clean Electricity"
+    - "penalty"
+    - "enforcement"
   high:
     - "Inflation Reduction Act"
     - "45V"
@@ -92,61 +94,57 @@ keywords:
     - "hydrogen"
     - "CCUS"
     - "carbon capture"
-    - "Directive 060"
     - "flaring"
     - "venting"
+    - "pipeline"
+    - "liquefied natural gas"
+    - "LNG"
+    - "Clean Fuel Regulations"
   medium:
     - "clean fuel"
     - "carbon pricing"
     - "TIER"
     - "GHGRP"
-    - "LNG"
-    - "pipeline"
+    - "NPRI"
+    - "transmission"
+    - "interconnection"
+    - "sustainability"
 
-# ── AI Analysis ─────────────────────────────────────────────
+# ── AI Analyzer ─────────────────────────────────────────────
 analyzer:
   model: "gpt-4o-mini"
-  temperature: 0.3
-  system_prompt: |
-    You are a regulatory intelligence analyst for North American energy companies.
-    Given a regulatory update, provide:
-    1. A 2-sentence executive summary
-    2. Impact level: CRITICAL, HIGH, MEDIUM, or LOW
-    3. A specific, actionable next step for a Sustainability Director
-
-    Respond ONLY in this JSON format:
-    {
-      "summary": "...",
-      "impact_level": "CRITICAL|HIGH|MEDIUM|LOW",
-      "action_required": "..."
-    }
-
-# ── Report Settings ──────────────────────────────────────────
-report:
-  title: "NetZeroX Policy Pulse: Energy Sector"
-  max_items: 5
-  output_dir: "output/"
-  format: "markdown"
-
-# ── Email Delivery ──────────────────────────────────────────
-email:
-  enabled: false
-  smtp_host: "smtp.gmail.com"
-  smtp_port: 587
-  from_address: ""
-  # Set via environment variables:
-  # POLICY_PULSE_EMAIL_USER
-  # POLICY_PULSE_EMAIL_PASS
-  subscribers: []
+  fallback_engine: "heuristic-energy-expert"
+  temperature: 0.2
 
 # ── Compliance Calendar ──────────────────────────────────────
 calendar:
   - date: "2026-03-31"
-    event: "US EPA GHGRP Reporting Deadline (e-GGRT)"
+    event: "US EPA GHGRP Subpart W Reporting (e-GGRT)"
+    authority: "EPA"
+    country: "US"
     impact: "CRITICAL"
+    statutory_penalty: "Up to $109,024/day under Clean Air Act § 113(b)"
   - date: "2026-03-31"
-    event: "Alberta TIER Compliance Report Due"
+    event: "Alberta TIER Compliance & True-Up Filing"
+    authority: "AER"
+    country: "CA"
     impact: "CRITICAL"
+    statutory_penalty: "$65/tonne default fund payment requirement"
   - date: "2026-06-01"
-    event: "Canada NPRI Reporting Deadline"
+    event: "Canada NPRI (National Pollutant Release Inventory)"
+    authority: "ECCC"
+    country: "CA"
     impact: "HIGH"
+    statutory_penalty: "Fines up to $1,000,000 under CEPA"
+  - date: "2026-09-01"
+    event: "BC-ER Montney Basin Fugitive Emissions Audit"
+    authority: "BC-ER"
+    country: "CA"
+    impact: "HIGH"
+    statutory_penalty: "Administrative monetary penalties & shut-in orders"
+  - date: "2026-12-31"
+    event: "Canada Clean Fuel Regulations (CFR) Credit Reconciliation"
+    authority: "ECCC"
+    country: "CA"
+    impact: "CRITICAL"
+    statutory_penalty: "Credit deficit surrender penalties"

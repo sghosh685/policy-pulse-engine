@@ -1,13 +1,12 @@
 """
 NetZeroX Policy Pulse — Database Layer
 SQLite-backed structured storage for regulatory updates.
-This is the "Structured Database" that becomes the Compliance OS API in Phase 2.
 """
 
 import sqlite3
 import os
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List, Dict, Any
 
 
 DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "policy_pulse.db")
@@ -23,27 +22,32 @@ def get_connection() -> sqlite3.Connection:
 
 
 def init_db():
-    """Create the schema if it doesn't exist."""
+    """Create the schema if it doesn't exist and run schema migrations."""
     conn = get_connection()
     conn.executescript("""
         CREATE TABLE IF NOT EXISTS regulatory_updates (
-            id              INTEGER PRIMARY KEY AUTOINCREMENT,
-            source_id       TEXT NOT NULL,
-            source_name     TEXT NOT NULL,
-            country         TEXT NOT NULL,
-            title           TEXT NOT NULL,
-            url             TEXT UNIQUE NOT NULL,
-            published_date  TEXT,
-            raw_content     TEXT,
-            summary         TEXT,
-            impact_level    TEXT DEFAULT 'MEDIUM',
-            action_required TEXT,
-            keywords_matched TEXT,
-            tags            TEXT,
-            analyzed        INTEGER DEFAULT 0,
-            sent_in_report  INTEGER DEFAULT 0,
-            created_at      TEXT DEFAULT (datetime('now')),
-            updated_at      TEXT DEFAULT (datetime('now'))
+            id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+            source_id           TEXT NOT NULL,
+            source_name         TEXT NOT NULL,
+            country             TEXT NOT NULL,
+            title               TEXT NOT NULL,
+            url                 TEXT UNIQUE NOT NULL,
+            published_date      TEXT,
+            raw_content         TEXT,
+            summary             TEXT,
+            impact_level        TEXT DEFAULT 'MEDIUM',
+            action_required     TEXT,
+            penalty_exposure    TEXT,
+            action_legal        TEXT,
+            action_ops          TEXT,
+            action_esg          TEXT,
+            cross_border_impact TEXT,
+            keywords_matched    TEXT,
+            tags                TEXT,
+            analyzed            INTEGER DEFAULT 0,
+            sent_in_report      INTEGER DEFAULT 0,
+            created_at          TEXT DEFAULT (datetime('now')),
+            updated_at          TEXT DEFAULT (datetime('now'))
         );
 
         CREATE INDEX IF NOT EXISTS idx_updates_source
@@ -77,13 +81,33 @@ def init_db():
         );
 
         CREATE TABLE IF NOT EXISTS compliance_calendar (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            event_date  TEXT NOT NULL,
-            event_name  TEXT NOT NULL,
-            impact      TEXT DEFAULT 'HIGH',
-            notified    INTEGER DEFAULT 0
+            id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+            event_date         TEXT NOT NULL,
+            event_name         TEXT NOT NULL,
+            authority          TEXT,
+            country            TEXT,
+            impact             TEXT DEFAULT 'HIGH',
+            statutory_penalty  TEXT,
+            notified           INTEGER DEFAULT 0
         );
     """)
+
+    # Gracefully add any new columns to existing databases
+    existing_cols = [c[1] for c in conn.execute("PRAGMA table_info(regulatory_updates)").fetchall()]
+    new_cols = {
+        "penalty_exposure": "TEXT",
+        "action_legal": "TEXT",
+        "action_ops": "TEXT",
+        "action_esg": "TEXT",
+        "cross_border_impact": "TEXT"
+    }
+    for col_name, col_type in new_cols.items():
+        if col_name not in existing_cols:
+            try:
+                conn.execute(f"ALTER TABLE regulatory_updates ADD COLUMN {col_name} {col_type}")
+            except Exception:
+                pass
+
     conn.commit()
     conn.close()
     print("✅ Database initialized at:", DB_PATH)
@@ -114,27 +138,37 @@ def insert_update(
         conn.commit()
         return cursor.lastrowid
     except sqlite3.IntegrityError:
-        # Duplicate URL — already scraped
         return None
     finally:
         conn.close()
 
 
-def update_analysis(row_id: int, summary: str, impact_level: str, action_required: str):
-    """Update a row with AI analysis results."""
+def update_analysis(
+    row_id: int,
+    summary: str,
+    impact_level: str,
+    action_required: str,
+    penalty_exposure: Optional[str] = None,
+    action_legal: Optional[str] = None,
+    action_ops: Optional[str] = None,
+    action_esg: Optional[str] = None,
+    cross_border_impact: Optional[str] = None
+):
+    """Update a row with enriched AI analysis results."""
     conn = get_connection()
     conn.execute(
         """UPDATE regulatory_updates
            SET summary = ?, impact_level = ?, action_required = ?,
+               penalty_exposure = ?, action_legal = ?, action_ops = ?, action_esg = ?, cross_border_impact = ?,
                analyzed = 1, updated_at = datetime('now')
            WHERE id = ?""",
-        (summary, impact_level, action_required, row_id),
+        (summary, impact_level, action_required, penalty_exposure, action_legal, action_ops, action_esg, cross_border_impact, row_id),
     )
     conn.commit()
     conn.close()
 
 
-def get_unanalyzed(limit: int = 20) -> list[dict]:
+def get_unanalyzed(limit: int = 50) -> List[Dict[str, Any]]:
     """Get items that haven't been analyzed by AI yet."""
     conn = get_connection()
     rows = conn.execute(
@@ -148,15 +182,26 @@ def get_unanalyzed(limit: int = 20) -> list[dict]:
     return [dict(r) for r in rows]
 
 
-def get_top_updates(days: int = 7, limit: int = 5) -> list[dict]:
+def get_all_updates() -> List[Dict[str, Any]]:
+    """Get all regulatory updates ordered by severity and date."""
+    conn = get_connection()
+    impact_order = "CASE impact_level WHEN 'CRITICAL' THEN 1 WHEN 'HIGH' THEN 2 WHEN 'MEDIUM' THEN 3 ELSE 4 END"
+    rows = conn.execute(
+        f"""SELECT * FROM regulatory_updates
+           ORDER BY {impact_order}, published_date DESC, created_at DESC"""
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_top_updates(days: int = 30, limit: int = 10) -> List[Dict[str, Any]]:
     """Get the top updates by impact level from the past N days."""
     conn = get_connection()
     impact_order = "CASE impact_level WHEN 'CRITICAL' THEN 1 WHEN 'HIGH' THEN 2 WHEN 'MEDIUM' THEN 3 ELSE 4 END"
     rows = conn.execute(
         f"""SELECT * FROM regulatory_updates
            WHERE analyzed = 1
-             AND created_at >= datetime('now', '-{days} days')
-           ORDER BY {impact_order}, created_at DESC
+           ORDER BY {impact_order}, published_date DESC, created_at DESC
            LIMIT ?""",
         (limit,),
     ).fetchall()
@@ -221,9 +266,3 @@ def get_stats() -> dict:
         "by_country": {r["country"]: r["cnt"] for r in by_country},
         "by_impact": {r["impact_level"]: r["cnt"] for r in by_impact},
     }
-
-
-# ── CLI Entry Point ──────────────────────────────────────────
-if __name__ == "__main__":
-    init_db()
-    print("📊 Stats:", get_stats())
